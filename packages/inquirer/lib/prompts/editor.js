@@ -4,7 +4,7 @@
  */
 
 var chalk = require('chalk');
-var editAsync = require('external-editor').editAsync;
+var ExternalEditor = require('external-editor').ExternalEditor;
 var Base = require('./base');
 var observe = require('../utils/events');
 var { Subject } = require('rxjs');
@@ -33,6 +33,8 @@ class EditorPrompt extends Base {
     // Prevents default from being printed on screen (can look weird with multiple lines)
     this.currentText = this.opt.default;
     this.opt.default = null;
+
+    this.editor = new ExternalEditor(this.currentText);
 
     // Init
     this.render();
@@ -69,7 +71,7 @@ class EditorPrompt extends Base {
   startExternalEditor() {
     // Pause Readline to prevent stdin and stdout from being modified while the editor is showing
     this.rl.pause();
-    editAsync(this.currentText, this.endExternalEditor.bind(this));
+    this.editor.runAsync(this.endExternalEditor.bind(this));
   }
 
   endExternalEditor(error, result) {
@@ -84,6 +86,7 @@ class EditorPrompt extends Base {
   onEnd(state) {
     this.editorResult.unsubscribe();
     this.lineSubscription.unsubscribe();
+    this.editor.cleanup();
     this.answer = state.value;
     this.status = 'answered';
     // Re-render prompt

@@ -1,5 +1,5 @@
 const chalk = require('chalk');
-const { editAsync } = require('external-editor');
+const { ExternalEditor } = require('external-editor');
 const { createPrompt, useState, useKeypress } = require('@inquirer/core/hooks');
 const { usePrefix } = require('@inquirer/core/lib/prefix');
 const { isEnterKey } = require('@inquirer/core/lib/key');
@@ -16,7 +16,8 @@ module.exports = createPrompt((config, done) => {
 
     if (isEnterKey(key)) {
       rl.pause();
-      editAsync(config.default || '', async (error, answer) => {
+      const editor = new ExternalEditor(config.default || '');
+      editor.runAsync(async (error, answer) => {
         rl.resume();
         if (error) {
           setError(error);
@@ -26,6 +27,7 @@ module.exports = createPrompt((config, done) => {
           if (isValid === true) {
             setError(undefined);
             setStatus('done');
+            editor.cleanup();
             done(answer);
           } else {
             setError(isValid || 'You must provide a valid value');
